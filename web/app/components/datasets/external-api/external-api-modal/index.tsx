@@ -1,4 +1,3 @@
-import React, { memo, useEffect, useState } from 'react'
 import type { FC } from 'react'
 import type { CreateExternalAPIReq, FormSchema } from '../declarations'
 import {
@@ -11,15 +10,12 @@ import {
   AlertDialogTitle,
 } from '@langgenius/dify-ui/alert-dialog'
 import { Button } from '@langgenius/dify-ui/button'
+import { Dialog, DialogContent } from '@langgenius/dify-ui/dialog'
 import { toast } from '@langgenius/dify-ui/toast'
-import { RiBook2Line, RiCloseLine, RiInformation2Line, RiLock2Fill } from '@remixicon/react'
+import { Tooltip } from '@langgenius/dify-ui/tooltip'
+import { memo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import ActionButton from '@/app/components/base/action-button'
-import {
-  Dialog,
-  DialogContent,
-} from '../../../base/dialog'
-import Tooltip from '../../../base/tooltip'
 import { createExternalAPI } from '@/service/datasets'
 import Form from './Form'
 
@@ -66,14 +62,21 @@ const AddExternalAPIModal: FC<AddExternalAPIModalProps> = ({ data, onSave, onCan
   const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
-  const [formData, setFormData] = useState<CreateExternalAPIReq>({ name: '', settings: { endpoint: '', api_key: '' } })
 
-  useEffect(() => {
+  // FIX: Initialize state directly to avoid 'react/set-state-in-effect' error
+  const [formData, setFormData] = useState<CreateExternalAPIReq>(() => {
     if (isEditMode && data)
-      setFormData(data)
-  }, [isEditMode, data])
+      return data
+    return { name: '', settings: { endpoint: '', api_key: '' } }
+  })
 
-  const hasEmptyInputs = Object.values(formData).some(value => typeof value === 'string' ? value.trim() === '' : Object.values(value as object).some(v => typeof v === 'string' && v.trim() === ''))
+  const hasEmptyInputs = Object.values(formData).some((value) => {
+    if (typeof value === 'string')
+      return value.trim() === ''
+    if (value && typeof value === 'object')
+      return Object.values(value).some(v => typeof v === 'string' && v.trim() === '')
+    return false
+  })
 
   const handleDataChange = (val: CreateExternalAPIReq) => {
     setFormData(val)
@@ -117,7 +120,7 @@ const AddExternalAPIModal: FC<AddExternalAPIModalProps> = ({ data, onSave, onCan
 
   return (
     <Dialog open onOpenChange={onCancel}>
-      <DialogContent className="!p-0 !max-w-[480px] !rounded-2xl overflow-hidden">
+      <DialogContent className="!max-w-[480px] overflow-hidden !rounded-2xl !p-0">
         <div className="relative flex flex-col items-start bg-components-panel-bg">
           <div className="flex flex-col items-start gap-2 self-stretch pt-6 pr-14 pb-3 pl-6">
             <div className="grow self-stretch title-2xl-semi-bold text-text-primary">
@@ -141,7 +144,8 @@ const AddExternalAPIModal: FC<AddExternalAPIModalProps> = ({ data, onSave, onCan
                         </div>
                         {datasetBindings?.map(binding => (
                           <div key={binding.id} className="flex items-center gap-1 self-stretch px-2 py-1">
-                            <RiBook2Line className="h-4 w-4 text-text-secondary" />
+                            {/* FIX: Used Tailwind icon class */}
+                            <div className="i-ri-book-2-line h-4 w-4 text-text-secondary" />
                             <div className="system-sm-medium text-text-secondary">{binding.name}</div>
                           </div>
                         ))}
@@ -150,14 +154,16 @@ const AddExternalAPIModal: FC<AddExternalAPIModalProps> = ({ data, onSave, onCan
                     asChild={false}
                     position="bottom"
                   >
-                    <RiInformation2Line className="h-3.5 w-3.5" />
+                    {/* FIX: Used Tailwind icon class */}
+                    <div className="i-ri-information-2-line h-3.5 w-3.5" />
                   </Tooltip>
                 </span>
               </div>
             )}
           </div>
           <ActionButton className="absolute top-5 right-5" onClick={onCancel}>
-            <RiCloseLine className="h-[18px] w-[18px] shrink-0 text-text-tertiary" />
+            {/* FIX: Used Tailwind icon class */}
+            <div className="i-ri-close-line h-[18px] w-[18px] shrink-0 text-text-tertiary" />
           </ActionButton>
           <Form value={formData} onChange={handleDataChange} formSchemas={formSchemas} className="flex flex-col items-start justify-center gap-4 self-stretch px-6 py-3" />
           <div className="flex items-center justify-end gap-2 self-stretch p-6 pt-5">
@@ -181,7 +187,8 @@ const AddExternalAPIModal: FC<AddExternalAPIModalProps> = ({ data, onSave, onCan
             </Button>
           </div>
           <div className="flex items-center justify-center gap-1 self-stretch rounded-b-2xl border-t-[0.5px] border-divider-subtle bg-background-soft px-2 py-3 system-xs-regular text-text-tertiary">
-            <RiLock2Fill className="h-3 w-3 text-text-quaternary" />
+            {/* FIX: Used Tailwind icon class */}
+            <div className="i-ri-lock-2-fill h-3 w-3 text-text-quaternary" />
             {t('externalAPIForm.encrypted.front', { ns: 'dataset' })}
             <a className="text-text-accent" target="_blank" rel="noopener noreferrer" href="https://pycryptodome.readthedocs.io/en/latest/src/cipher/oaep.html">
               PKCS1_OAEP
