@@ -2607,14 +2607,6 @@
       "count": 1
     }
   },
-  "web/app/components/datasets/external-api/external-api-modal/index.tsx": {
-    "no-restricted-imports": {
-      "count": 2
-    },
-    "react/set-state-in-effect": {
-      "count": 1
-    }
-  },
   "web/app/components/datasets/external-knowledge-base/create/ExternalApiSelect.tsx": {
     "react/set-state-in-effect": {
       "count": 1
