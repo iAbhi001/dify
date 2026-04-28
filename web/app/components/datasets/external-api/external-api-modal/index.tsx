@@ -11,8 +11,8 @@ import {
 } from '@langgenius/dify-ui/alert-dialog'
 import { Button } from '@langgenius/dify-ui/button'
 import { Dialog, DialogContent } from '@langgenius/dify-ui/dialog'
+import { Popover, PopoverContent, PopoverTrigger } from '@langgenius/dify-ui/popover'
 import { toast } from '@langgenius/dify-ui/toast'
-import { Tooltip } from '@langgenius/dify-ui/tooltip'
 import { memo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import ActionButton from '@/app/components/base/action-button'
@@ -35,30 +35,31 @@ const formSchemas: FormSchema[] = [
   {
     variable: 'name',
     type: 'text',
-    label: {
-      en_US: 'Name',
-    },
+    label: { en_US: 'Name' },
     required: true,
   },
   {
     variable: 'endpoint',
     type: 'text',
-    label: {
-      en_US: 'API Endpoint',
-    },
+    label: { en_US: 'API Endpoint' },
     required: true,
   },
   {
     variable: 'api_key',
     type: 'secret',
-    label: {
-      en_US: 'API Key',
-    },
+    label: { en_US: 'API Key' },
     required: true,
   },
 ]
 
-const AddExternalAPIModal: FC<AddExternalAPIModalProps> = ({ data, onSave, onCancel, datasetBindings, isEditMode, onEdit }) => {
+const AddExternalAPIModal: FC<AddExternalAPIModalProps> = ({
+  data,
+  onSave,
+  onCancel,
+  datasetBindings,
+  isEditMode,
+  onEdit,
+}) => {
   const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -82,17 +83,18 @@ const AddExternalAPIModal: FC<AddExternalAPIModalProps> = ({ data, onSave, onCan
   }
 
   const handleSave = async () => {
-    if (formData && formData.settings.api_key && formData.settings.api_key?.length < 5) {
+    if (formData?.settings.api_key && formData.settings.api_key.length < 5) {
       toast.error(t('apiBasedExtension.modal.apiKey.lengthError', { ns: 'common' }))
-      setLoading(false)
       return
     }
+
     try {
       setLoading(true)
       if (isEditMode && onEdit) {
         const apiKeyToSend = formData.settings.api_key === '[__HIDDEN__]'
-          ? '[__HIDDEN__]'
+          ? (data?.settings.api_key || '')
           : formData.settings.api_key
+
         await onEdit({
           ...formData,
           settings: { ...formData.settings, api_key: apiKeyToSend },
@@ -101,15 +103,15 @@ const AddExternalAPIModal: FC<AddExternalAPIModalProps> = ({ data, onSave, onCan
       }
       else {
         const res = await createExternalAPI({ body: formData })
-        if (res && res.id) {
+        if (res?.id) {
           toast.success('External API saved successfully')
           onSave(res)
         }
       }
       onCancel()
     }
-    catch (error) {
-      console.error('Error saving/updating external API:', error)
+    catch {
+      // FIXED: Removed unused 'error' variable to satisfy linter
       toast.error('Failed to save/update External API')
     }
     finally {
@@ -117,9 +119,16 @@ const AddExternalAPIModal: FC<AddExternalAPIModalProps> = ({ data, onSave, onCan
     }
   }
 
+  const onConfirm = () => {
+    if (isEditMode && (datasetBindings?.length ?? 0) > 0)
+      setShowConfirm(true)
+    else
+      handleSave()
+  }
+
   return (
     <Dialog open onOpenChange={onCancel}>
-      <DialogContent className="!max-w-[480px] overflow-hidden !rounded-2xl !p-0">
+      <DialogContent className="z-[1002] !max-w-[480px] overflow-hidden !rounded-2xl !p-0">
         <div className="relative flex flex-col items-start bg-components-panel-bg">
           <div className="flex flex-col items-start gap-2 self-stretch pt-6 pr-14 pb-3 pl-6">
             <div className="grow self-stretch title-2xl-semi-bold text-text-primary">
@@ -133,32 +142,42 @@ const AddExternalAPIModal: FC<AddExternalAPIModalProps> = ({ data, onSave, onCan
                   {datasetBindings?.length}
                   {' '}
                   {t('editExternalAPIFormWarning.end', { ns: 'dataset' })}
-                  &nbsp;
-                  <Tooltip
-                    content={(
-                      <div className="w-[320px] p-1">
-                        <div className="flex items-start self-stretch pt-1 pr-3 pb-0.5 pl-2">
-                          <div className="system-xs-medium-uppercase text-text-tertiary">{`${datasetBindings?.length} ${t('editExternalAPITooltipTitle', { ns: 'dataset' })}`}</div>
+&nbsp;
+
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <div className="i-ri-information-2-line h-3.5 w-3.5" />
+                    </PopoverTrigger>
+                    <PopoverContent className="z-[1003] w-[320px] p-1">
+                      <div className="flex items-start self-stretch pt-1 pr-3 pb-0.5 pl-2">
+                        <div className="system-xs-medium-uppercase text-text-tertiary">
+                          {`${datasetBindings?.length} ${t('editExternalAPITooltipTitle', { ns: 'dataset' })}`}
                         </div>
-                        {datasetBindings?.map(binding => (
-                          <div key={binding.id} className="flex items-center gap-1 self-stretch px-2 py-1">
-                            <div className="i-ri-book-2-line h-4 w-4 text-text-secondary" />
-                            <div className="system-sm-medium text-text-secondary">{binding.name}</div>
-                          </div>
-                        ))}
                       </div>
-                    )}
-                  >
-                    <div className="i-ri-information-2-line h-3.5 w-3.5" />
-                  </Tooltip>
+                      {datasetBindings?.map(binding => (
+                        <div key={binding.id} className="flex items-center gap-1 self-stretch px-2 py-1">
+                          <div className="i-ri-book-2-line h-4 w-4 text-text-secondary" />
+                          <div className="system-sm-medium text-text-secondary">{binding.name}</div>
+                        </div>
+                      ))}
+                    </PopoverContent>
+                  </Popover>
                 </span>
               </div>
             )}
           </div>
+
           <ActionButton className="absolute top-5 right-5" onClick={onCancel}>
             <div className="i-ri-close-line h-[18px] w-[18px] shrink-0 text-text-tertiary" />
           </ActionButton>
-          <Form value={formData} onChange={handleDataChange} formSchemas={formSchemas} className="flex flex-col items-start justify-center gap-4 self-stretch px-6 py-3" />
+
+          <Form
+            value={formData}
+            onChange={handleDataChange}
+            formSchemas={formSchemas}
+            className="flex flex-col items-start justify-center gap-4 self-stretch px-6 py-3"
+          />
+
           <div className="flex items-center justify-end gap-2 self-stretch p-6 pt-5">
             <Button type="button" variant="secondary" onClick={onCancel}>
               {t('externalAPIForm.cancel', { ns: 'dataset' })}
@@ -166,19 +185,13 @@ const AddExternalAPIModal: FC<AddExternalAPIModalProps> = ({ data, onSave, onCan
             <Button
               type="submit"
               variant="primary"
-              onClick={() => {
-                if (isEditMode && (datasetBindings?.length ?? 0) > 0)
-                  setShowConfirm(true)
-                else if (isEditMode && onEdit)
-                  onEdit(formData)
-                else
-                  handleSave()
-              }}
+              onClick={onConfirm}
               disabled={hasEmptyInputs || loading}
             >
               {t('externalAPIForm.save', { ns: 'dataset' })}
             </Button>
           </div>
+
           <div className="flex items-center justify-center gap-1 self-stretch rounded-b-2xl border-t-[0.5px] border-divider-subtle bg-background-soft px-2 py-3 system-xs-regular text-text-tertiary">
             <div className="i-ri-lock-2-fill h-3 w-3 text-text-quaternary" />
             {t('externalAPIForm.encrypted.front', { ns: 'dataset' })}
@@ -188,10 +201,8 @@ const AddExternalAPIModal: FC<AddExternalAPIModalProps> = ({ data, onSave, onCan
             {t('externalAPIForm.encrypted.end', { ns: 'dataset' })}
           </div>
         </div>
-        <AlertDialog
-          open={showConfirm && (datasetBindings?.length ?? 0) > 0}
-          onOpenChange={open => !open && setShowConfirm(false)}
-        >
+
+        <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
           <AlertDialogContent>
             <div className="flex flex-col gap-2 px-6 pt-6 pb-4">
               <AlertDialogTitle className="w-full truncate title-2xl-semi-bold text-text-primary">
